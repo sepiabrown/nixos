@@ -3,9 +3,10 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, ... }:
-############################################################################################
-############################################################################################
+
 let
+######################
+######################
   custom_xkeyboard_config = builtins.toFile "suwon-keyboard-patch" ''
 --- xkeyboard-config-2.17/symbols/pc	1970-01-01 09:00:01.000000000 +0900
 +++ b/pc	2020-03-03 21:26:21.567557000 +0900
@@ -51,9 +52,65 @@ let
  
      // Fake keys for virtual<->real modifiers mapping:
      key <LVL3> {	[ ISO_Level3_Shift	]	};
-               '';
-############################################################################################
-############################################################################################
+  '';
+  xmonad_config = ''
+import XMonad
+import XMonad.Config.Desktop
+import XMonad.Config.Mate
+import XMonad.Util.EZConfig 
+--import XMonad.Util.Dmenu
+import XMonad.Hooks.DynamicLog
+import XMonad.Prompt.Shell
+import XMonad.Actions.UpdatePointer
+
+-- The main function.
+main = xmonad =<< statusBar myBar myPP toggleStrutsKey myConfig
+
+-- Command to launch the bar.
+myBar = "xmobar"
+
+-- Custom PP, configure it as you like. It determines what is being written to the bar.
+myPP = xmobarPP { ppCurrent = xmobarColor "#429942" "" . wrap "<" ">"}
+
+-- Key binding to toggle the gap for the bar.
+toggleStrutsKey XConfig {XMonad.modMask = mod3Mask} = (mod3Mask, xK_b)
+-- The default number of workspaces (virtual screens) and their names.
+-- By default we use numeric strings, but any string may be used as a
+-- workspace name. The number of workspaces is determined by the length
+-- of this list.
+--
+-- A tagging example:
+--
+-- > workspaces = ["web", "irc", "code" ] ++ map show [4..9]
+--
+--myWorkspaces    = ["web","dev","3","4","5","6","7","8","9"]
+myWorkspaces    = ["web","2","3","4","5","6","7","8","9"]
+
+-- Main configuration, override the defaults to your liking.
+myConfig = mateConfig 
+        { borderWidth        = 2
+        --, terminal           = "alacritty"
+        , normalBorderColor  = "#cccccc"
+        , focusedBorderColor = "#cd8b00" 
+        , modMask = mod3Mask 
+        , focusFollowsMouse = False
+        , workspaces = myWorkspaces
+        --, logHook = updatePointer (0.5, 0.5) (0, 0) <+> logHook desktopConfig 
+                --do 
+               	--updatePointer (0.5, 0.5) (0, 0)
+               	--logHook mateConfig -- : error happens with mate workspace!
+
+        }
+        `additionalKeysP`
+                [ (("M-p"), spawn "dmenu_run -fn 'Droid Sans Mono-13'") 
+               	, (("M-f"), spawn "firefox")
+               	, (("M-s"), spawn "alacritty -e my.rclone")
+                , (("M-z"), kill)
+
+                ]
+  ''; # incomplete xmobar option breaks mate workspace switcher. so set all or erase all
+######################
+######################
 
   channelRelease = "nixos-20.09pre215947.82b54d49066";  # 2020-03-06 01:53:48
   sha256 = "1ygvhl72mjwfgkag612q9b6nvh0k5dhdqsr1l84jmsjk001fqfa7";
@@ -66,6 +123,13 @@ let
   };
 in
 {
+  # system.extraSystemBuilderCmds =
+  #  ''mkdir -p $HOME/configfiles
+  #    ln -s '${let value = builtins.getEnv "NIXOS_CONFIG"; in if value == "" then  <nixos-config> else value}' \
+  #    "/nix/var/configfiles$out/configuration.nix"
+  #  '';  
+  system.copySystemConfiguration = true;  
+
   nix.nixPath = [
     "nixpkgs=${pinnedNixpkgs}"
     "nixos-config=/etc/nixos/configuration.nix"
@@ -80,21 +144,31 @@ in
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      ./temporary-override.nix
     ];
 
-  fileSystems."/home" =
-    { device = "/dev/disk/by-uuid/5fd1f2e1-a4ea-44af-a09d-c5163eb042c7";
-      fsType = "ext4";
-    };  
+  # fileSystems."/home" =
+  #  { device = "/dev/disk/by-label/vivohome";
+  #    fsType = "ext4";
+  #  };  
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  system.copySystemConfiguration = true;  
 
   networking.hostName = "suwon-nix"; # Define your hostname.
   #networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-  networking.networkmanager.enable = true;   # wpa_spplicant and networkmanager collide
-  services.openssh.enable = true;
+  networking.networkmanager = {
+    enable = true;   # wpa_spplicant and networkmanager collide
+    packages = [
+#????????????????????????????????????
+      pkgs.networkmanager-l2tp
+    ];
+  };
+
+  networking.extraHosts = ''
+    209.51.188.89 elpa.gnu.org
+  '';
+#????????????????????????????????????
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
@@ -127,6 +201,13 @@ in
       ];};
     in [
     #system
+    gnome3.dconf-editor
+    # mate.caja-extensions
+    # mate.caja-with-extensions
+
+    ripgrep
+    unzip
+    nvramtool
     refind
     blueman
     networkmanager
@@ -134,20 +215,26 @@ in
     curl
     file
     htop
+    gparted
     partition-manager
+    lvm2
     home-manager
+    #xmonad_log_applet_mate
 
     #must-need
     vimHugeX
-    emacsGit
+    emacs
+    #emacsGit
     firefox
     chromium
     # google-chrome
     libreoffice
-
-    haskellPackages.xmonad-contrib
-    haskellPackages.xmonad-extras
-    haskellPackages.xmonad
+    alacritty
+    dmenu
+    # haskellPackages.dbus
+    # haskellPackages.xmonad-contrib
+    # haskellPackages.xmonad-extras
+    # haskellPackages.xmonad
     haskellPackages.xmobar
 
     #document tools
@@ -155,12 +242,14 @@ in
 
     #dev tools
     git
-    ripgrep
     rstudio
     python3
     R-with-my-packages
     rstudio
+    haskellPackages.ghc
+
     #etc
+    vlc
     #d2coding
     ];
 
@@ -169,10 +258,6 @@ in
   # programs.mtr.enable = true;
   # programs.gnupg.agent = { enable = true; enableSSHSupport = true; };
 
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
@@ -197,7 +282,8 @@ in
     extraModules = [ pkgs.pulseaudio-modules-bt ];
     package = pkgs.pulseaudioFull;
   };
-  services.blueman.enable = true;
+
+  
   #  sound.mediaKeys = {
   #    enable = true;
   #    volumeStep = "5%";
@@ -209,88 +295,75 @@ in
   # services.illum.enable = true;
 
   # nixpkgs.config.allowUnfree = true;
-  # Enable the X11 windowing system.
-  services.xserver = {
-    enable = true;
-    libinput.enable = true; # Enable touchpad support.
-    # libinput.naturalScrolling = true;    
-    layout = "us";
-    xkbVariant = "dvorak";
-    desktopManager = {
-      mate.enable = true;
-      #default = "mate";
-    };
+  
+  # List services that you want to enable:
+  services = {
+    openssh.enable = true; # Enable the OpenSSH daemon.
+    blueman.enable = true;
+    xl2tpd.enable = true;
+    xserver = { 
+      enable = true; # Enable the X11 windowing system.
+      displayManager.defaultSession = "mate+xmonad";
+      # desktopManager.xterm.enable = false;
+      libinput.enable = true; # Enable touchpad support.
+      layout = "us";
+      xkbVariant = "dvorak";
+      desktopManager = {
+        mate.enable = true;
+        # default = "mate"; # deprecated
+      };
+      windowManager.xmonad = {
+        enable = true;
+        enableContribAndExtras = true;
+        config = (xmonad_config);
+        extraPackages = haskellPackages: [
+          haskellPackages.xmonad-contrib
+          haskellPackages.xmonad-extras
+          haskellPackages.xmonad
+        ];
+      };
+    };  
+  #displayManager.lightdm.autoLogin = {
+  #enable = true;
+  #user = "sepiabrown";
   };
+
   console.useXkbConfig = true;
 
   nixpkgs.overlays = [
-    (import (builtins.fetchTarball {
-      url = https://github.com/sepiabrown/emacs-overlay/archive/master.tar.gz;
-    }))
-    ( self: super: {
-        xkeyboard_config = super.xkeyboard_config.overrideAttrs ( oldAttr: {
-          patches = [ (custom_xkeyboard_config) ];
+    (self: super: {
+      new_xkeyboardconfig = super.xorg.xkeyboardconfig.overrideAttrs (old: {
+        patches = [
+          (custom_xkeyboard_config)
+        ];
+      }); 
+
+      new_xkbcomp = super.xorg.xkbcomp.overrideAttrs (old: {
+        configureFlags = "--with-xkb-config-root=${self.new_xkeyboardconfig}/share/X11/xkb";
+      });
+
+      xorg = super.xorg // {
+        xorgserver = super.xorg.xorgserver.overrideAttrs (old: {
+          configureFlags = old.configureFlags ++ [
+            "--with-xkb-path=${self.new_xkeyboardconfig}/share/X11/xkb"
+            "--with-xkb-bin-directory=${self.new_xkbcomp}/bin"
+          ];
         });
+      }; # display manager keyboard
+
+      libxklavier = super.libxklavier.overrideAttrs (old: {
+        configureFlags = old.configureFlags ++ [
+          "--with-xkb-base=${self.new_xkeyboardconfig}/share/X11/xkb"
+          "--with-xkb-bin-base=${self.new_xkbcomp}/bin"
+        ]; 
+      }); # window manager keyboard
+#      xkbvalidate = super.xkbvalidate.override {
+#        libxkbcommon = super.libxkbcommon.override {
+#          xkeyboard_config = self.xorg.new_xkeyboardconfig;
+#        };
+#      };
     })
   ];
-#    windowManager.xmonad = {
-#      enable = true;
-#      enableContribAndExtras = true;
-#      config = ''
-#
-#import XMonad
-#import XMonad.Config.Mate
-#import XMonad.Util.EZConfig 
-#--import XMonad.Util.Dmenu
-#import XMonad.Hooks.DynamicLog
-#import XMonad.Prompt.Shell
-#import XMonad.Actions.UpdatePointer
-#
-#-- The main function.
-#main = xmonad =<< statusBar myBar myPP toggleStrutsKey myConfig
-#
-#-- Command to launch the bar.
-#myBar = "xmobar"
-#
-#-- Custom PP, configure it as you like. It determines what is being written to the bar.
-#myPP = xmobarPP { ppCurrent = xmobarColor "#429942" "" . wrap "<" ">"}
-#
-#-- Key binding to toggle the gap for the bar.
-#toggleStrutsKey XConfig {XMonad.modMask = mod4Mask} = (mod4Mask, xK_b)
-#
-#-- Main configuration, override the defaults to your liking.
-#myConfig = mateConfig 
-#	{
-#	borderWidth        = 2
-#	, terminal           = "alacritty"
-#	, normalBorderColor  = "#cccccc"
-#	, focusedBorderColor = "#cd8b00" 
-#        , modMask = mod4Mask 
-#	, focusFollowsMouse = False
-#	, logHook = updatePointer (0.5, 0.5) (0, 0) <+> logHook mateConfig 
-#		--do 
-#		--updatePointer (0.5, 0.5) (0, 0)
-#		--logHook mateConfig -- : error happens with mate workspace!
-#        }
-#	`additionalKeysP`
-#		[
-#		(("M-p"), spawn "dmenu_run -fn 'Droid Sans Mono-13'") 
-#		,(("M-f"), spawn "firefox")
-#		,(("M-s"), spawn "alacritty -e my.rclone")
-#		]
-#      '';
-#
-      #  extraPackages = haskellPackages: [
-      #    haskellPackages.xmonad-contrib
-      #    haskellPackages.xmonad-extras
-      #    haskellPackages.xmonad
-      #  ];
-#    };
-  # windowManager.default = "xmonad"; 
-  # displayManager.lightdm.autoLogin = {
-  # enable = true;
-  # user = "sepiabrown";
-#  };
 
   fonts = {
     enableFontDir = true;
@@ -313,9 +386,15 @@ in
     ];
   };
 
-  environment.variables = {
-    TERMINAL = [ "mate-terminal" ];
-    # OH_MY_ZSH = [ "${pkgs.oh-my-zsh}/share/oh-my-zsh" ];
+  
+  environment = {  
+    etc."ipsec.secrets".text = ''
+      include ipsec.d/ipsec.nm-l2tp.secrets
+    '';
+    #variables = {
+    #  TERMINAL = [ "mate-terminal" ];
+    #  # OH_MY_ZSH = [ "${pkgs.oh-my-zsh}/share/oh-my-zsh" ];
+    #};
   };
 
   programs.vim.defaultEditor = true;
@@ -347,4 +426,3 @@ in
   # should.
   system.stateVersion = "19.09"; # Did you read the comment?
 }
-
