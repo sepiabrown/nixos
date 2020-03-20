@@ -116,38 +116,13 @@ myConfig = mateConfig
 # sudo nixos-rebuild boot -p '20031619_gvfs__test' -I nixpkgs=https://releases.nixos.org/nixos/unstable/nixos-20.09pre215947.82b54d49066/nixexprs.tar.xz 
 # sudo nixos-rebuild switch -p '20031619_gvfs__test' -I nixpkgs=/home/sepiabrown/nixos-20.09pre215947.82b54d49066
 
-  channelRelease = "nixos-20.09pre215947.82b54d49066";  # 2020-03-06 01:53:48
-  sha256 = "1ygvhl72mjwfgkag612q9b6nvh0k5dhdqsr1l84jmsjk001fqfa7";
-
-  channelName = "unstable";
-  url = "https://releases.nixos.org/nixos/${channelName}/${channelRelease}/nixexprs.tar.xz";
-
-  # pinnedNixpkgs = "/home/sepiabrown/nixos-20.09pre215947.82b54d49066";
-  pinnedNixpkgs = builtins.fetchTarball {
-    inherit url sha256;
-  };
 in
 {
   system.copySystemConfiguration = true;  
 
-  nix.nixPath = [
-    "nixpkgs=${pinnedNixpkgs}"
-    "nixos-config=/etc/nixos/configuration.nix"
-    "/nix/var/nix/profiles/per-user/root/channels"
-  ];
-
-  programs.command-not-found = {
-    enable = true;
-    dbPath = "${pinnedNixpkgs}/programs.sqlite";
-  };
-
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      #./mate-temporary.nix
-      #./xmonad-temporary.nix
-      #./display-managers-temporary.nix
-      #./lightdm-temporary.nix
     ];
 
   # fileSystems."/home" =
@@ -211,69 +186,6 @@ in
     lvm2
     networkmanager
     htop
-    chromium
-    git
-    gnome3.dconf-editor
-
-    ripgrep
-    unzip
-    nvramtool
-    refind
-    blueman
-    networkmanager
-    networkmanagerapplet
-    wget
-    curl
-    file
-    htop
-    gparted
-    partition-manager
-    lvm2
-    home-manager
-
-    #must-need
-    vimHugeX
-    emacs
-    #emacsGit
-    firefox
-    chromium
-    # google-chrome
-    libreoffice
-    alacritty
-    dmenu
-    # haskellPackages.dbus
-    # haskellPackages.xmonad-contrib
-    # haskellPackages.xmonad-extras
-    # haskellPackages.xmonad
-    haskellPackages.xmobar
-
-    #document tools
-    texlive.combined.scheme-full
-
-    #dev tools
-    automake
-    autoconf
-
-    git
-    rstudio
-    python3
-    R-with-my-packages
-    rstudio
-    haskellPackages.ghc
-
-    #multimedia
-    vlc
-    flameshot
-    shutter
-
-    capture # no sound
-    simplescreenrecorder # with sound
-    
-    #etc
-    #d2coding
-
-    #unfree
-    zoom-us
     ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -365,75 +277,6 @@ in
 
   nixpkgs.config.allowUnfree = true;
 
-  nixpkgs.overlays = [
-    (self: super: {
-      new_xkeyboardconfig = super.xorg.xkeyboardconfig.overrideAttrs (old: {
-        patches = [
-          (custom_xkeyboard_config)
-        ];
-        #patchFlags = [ "-p2" ];
-      }); 
-
-      new_xkbcomp = super.xorg.xkbcomp.overrideAttrs (old: {
-        configureFlags = "--with-xkb-config-root=${self.new_xkeyboardconfig}/share/X11/xkb";
-      });
-
-      xorg = super.xorg // {
-        xorgserver = super.xorg.xorgserver.overrideAttrs (old: {
-          configureFlags = old.configureFlags ++ [
-            "--with-xkb-path=${self.new_xkeyboardconfig}/share/X11/xkb"
-            "--with-xkb-bin-directory=${self.new_xkbcomp}/bin"
-          ];
-        });
-      }; # display manager keyboard
-
-      libxklavier = super.libxklavier.overrideAttrs (old: {
-        configureFlags = old.configureFlags ++ [
-          "--with-xkb-base=${self.new_xkeyboardconfig}/share/X11/xkb"
-          "--with-xkb-bin-base=${self.new_xkbcomp}/bin"
-        ]; 
-      }); # window manager keyboard
-
-#      xkbvalidate = super.xkbvalidate.override {
-#        libxkbcommon = super.libxkbcommon.override {
-#          xkeyboard_config = self.xorg.new_xkeyboardconfig;
-#        };
-#      };
-
-      emacs = (super.emacs.overrideAttrs(old: {
-        buildInputs = old.buildInputs
-          ++ [self.glib-networking];
-      })).override {
-        withXwidgets = true;
-        withGTK3 = true;
-        webkitgtk = super.webkitgtk;
-      };
-
-    })
-  ];
-
-  fonts = {
-    enableFontDir = true;
-    enableGhostscriptFonts = true;
-    fonts = with pkgs; [ 
-      # anonymousPro # TrueType font set intended for source code 
-      # corefonts # Microsoft's TrueType core fonts for the Web has an unfree license (‘unfreeRedistributable’), refusing to evaluate.
-      dejavu_fonts # A typeface family based on the Bitstream Vera fonts
-      noto-fonts # Beautiful and free fonts for many languages
-      freefont_ttf # GNU Free UCS Outline Fonts
-      google-fonts
-      inconsolata # A monospace font for both screen and print
-      liberation_ttf # Liberation Fonts, replacements for Times New Roman, Arial, and Courier New
-      # powerline-fonts  # Oh My ZSH, agnoster fonts  
-      source-code-pro
-      terminus_font  # A clean fixed width font
-      # ttf_bitstream_vera
-      ubuntu_font_family
-      d2coding
-    ];
-  };
-
-  
   environment = {  
     etc."ipsec.secrets".text = ''
       include ipsec.d/ipsec.nm-l2tp.secrets

@@ -15,11 +15,13 @@
 
   fileSystems."/" =
     { device = "/dev/disk/by-uuid/91214edb-6611-4638-8e44-c0f0fd604ccf";
+    #{ device = "/dev/disk/by-label/nixos";
       fsType = "ext4";
     };
 
   fileSystems."/boot" =
     { device = "/dev/disk/by-uuid/1603-D4B7";
+    #{ device = "/dev/disk/by-label/BOOT";
       fsType = "vfat";
     };
 
@@ -28,7 +30,6 @@
     #{ device = "/dev/disk/by-label/vivohome";
       fsType = "ext4";
     };  
-
   swapDevices = [ ];
 
   nix.maxJobs = lib.mkDefault 8;

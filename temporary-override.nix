@@ -99,6 +99,7 @@ let
           # `sessionWrapper`.
           
           ${dm.export}
+
           # Start the window manager.
           ${wm.start}
 

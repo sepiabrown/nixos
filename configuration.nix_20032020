@@ -76,17 +76,28 @@ myPP = xmobarPP { ppCurrent = xmobarColor "#429942" "" . wrap "<" ">"}
 
 -- Key binding to toggle the gap for the bar.
 toggleStrutsKey XConfig {XMonad.modMask = mod3Mask} = (mod3Mask, xK_b)
+-- The default number of workspaces (virtual screens) and their names.
+-- By default we use numeric strings, but any string may be used as a
+-- workspace name. The number of workspaces is determined by the length
+-- of this list.
+--
+-- A tagging example:
+--
+-- > workspaces = ["web", "irc", "code" ] ++ map show [4..9]
+--
+--myWorkspaces    = ["web","dev","3","4","5","6","7","8","9"]
+myWorkspaces    = ["web","2","3","4","5","6","7","8","9"]
 
 -- Main configuration, override the defaults to your liking.
 myConfig = mateConfig 
         { borderWidth        = 2
-        , terminal           = "mate-terminal" --"alacritty"
+        --, terminal           = "alacritty"
         , normalBorderColor  = "#cccccc"
         , focusedBorderColor = "#cd8b00" 
         , modMask = mod3Mask 
         , focusFollowsMouse = False
-        --, workspaces = ["web","2","3","4","5","6","7","8","9","10","11"]
-        , logHook = updatePointer (0.5, 0.5) (0, 0) <+> logHook desktopConfig 
+        , workspaces = myWorkspaces
+        --, logHook = updatePointer (0.5, 0.5) (0, 0) <+> logHook desktopConfig 
                 --do 
                	--updatePointer (0.5, 0.5) (0, 0)
                	--logHook mateConfig -- : error happens with mate workspace!
@@ -100,21 +111,10 @@ myConfig = mateConfig
 
                 ]
   ''; # incomplete xmobar option breaks mate workspace switcher. so set all or erase all
-
-  inherit (pkgs.lib) mkOption mkIf optionals literalExample;
-  cfg = config.services.xserver.windowManager.xmonad;
-  xmonadBin = pkgs.writers.writeHaskell "xmonad2" {
-    ghc = cfg.haskellPackages.ghc;
-    libraries = [ cfg.haskellPackages.xmonad ] ++
-                cfg.extraPackages cfg.haskellPackages ++
-                optionals cfg.enableContribAndExtras
-                (with cfg.haskellPackages; [ xmonad-contrib xmonad-extras ]);
-  } xmonad_config;
 ######################
 ######################
 
-# sudo nixos-rebuild boot -p '20031619_gvfs__test' -I nixpkgs=https://releases.nixos.org/nixos/unstable/nixos-20.09pre215947.82b54d49066/nixexprs.tar.xz 
-# sudo nixos-rebuild switch -p '20031619_gvfs__test' -I nixpkgs=/home/sepiabrown/nixos-20.09pre215947.82b54d49066
+# nixos-rebuild boot -p '20031619_gvfs__test' -I nixpkgs=https://releases.nixos.org/nixos/unstable/nixos-20.09pre215947.82b54d49066/nixexprs.tar.xz 
 
   channelRelease = "nixos-20.09pre215947.82b54d49066";  # 2020-03-06 01:53:48
   sha256 = "1ygvhl72mjwfgkag612q9b6nvh0k5dhdqsr1l84jmsjk001fqfa7";
@@ -122,12 +122,16 @@ myConfig = mateConfig
   channelName = "unstable";
   url = "https://releases.nixos.org/nixos/${channelName}/${channelRelease}/nixexprs.tar.xz";
 
-  # pinnedNixpkgs = "/home/sepiabrown/nixos-20.09pre215947.82b54d49066";
   pinnedNixpkgs = builtins.fetchTarball {
     inherit url sha256;
   };
 in
 {
+  # system.extraSystemBuilderCmds =
+  #  ''mkdir -p $HOME/configfiles
+  #    ln -s '${let value = builtins.getEnv "NIXOS_CONFIG"; in if value == "" then  <nixos-config> else value}' \
+  #    "/nix/var/configfiles$out/configuration.nix"
+  #  '';  
   system.copySystemConfiguration = true;  
 
   nix.nixPath = [
@@ -141,13 +145,18 @@ in
     dbPath = "${pinnedNixpkgs}/programs.sqlite";
   };
 
+  #disabledModules = [
+  #  "services/x11/desktop-managers/mate.nix"
+  #  "services/x11/window-managers/xmonad.nix"
+  #  "services/x11/display-managers/default.nix" 
+  #]; 
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      #./mate-temporary.nix
-      #./xmonad-temporary.nix
-      #./display-managers-temporary.nix
-      #./lightdm-temporary.nix
+      ./mate-temporary.nix
+      ./xmonad-temporary.nix
+      ./display-managers-temporary.nix
+      ./lightdm-temporary.nix
     ];
 
   # fileSystems."/home" =
@@ -195,15 +204,22 @@ in
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
- 
+  environment.mate.excludePackages = with pkgs;[
+    mate.caja-extensions
+    mate.caja
+    mate.python-caja
+    mate.caja-with-extensions
+    mate.caja-dropbox
+    #mate.mate-terminal
+  ];
   environment.systemPackages = with pkgs; 
-    let
-      R-with-my-packages = rWrapper.override { packages = with rPackages; [ 
-        ggplot2
-        dplyr
-        xts
-      ];};
-    in
+#    let
+#      R-with-my-packages = rWrapper.override { packages = with rPackages; [ 
+#        ggplot2
+#        dplyr
+#        xts
+#      ];};
+#    in
     [
     #system
     vimHugeX
@@ -213,67 +229,68 @@ in
     htop
     chromium
     git
-    gnome3.dconf-editor
-
-    ripgrep
-    unzip
-    nvramtool
-    refind
-    blueman
-    networkmanager
-    networkmanagerapplet
-    wget
-    curl
-    file
-    htop
-    gparted
-    partition-manager
-    lvm2
-    home-manager
-
-    #must-need
-    vimHugeX
-    emacs
-    #emacsGit
-    firefox
-    chromium
-    # google-chrome
-    libreoffice
-    alacritty
-    dmenu
-    # haskellPackages.dbus
-    # haskellPackages.xmonad-contrib
-    # haskellPackages.xmonad-extras
-    # haskellPackages.xmonad
+#    gnome3.dconf-editor
+#
+#    ripgrep
+#    unzip
+#    nvramtool
+#    refind
+#    blueman
+#    networkmanager
+#    networkmanagerapplet
+#    wget
+#    curl
+#    file
+#    htop
+#    gparted
+#    partition-manager
+#    lvm2
+#    home-manager
+#    #xmonad_log_applet_mate
+#
+#    #must-need
+#    vimHugeX
+#    emacs
+#    #emacsGit
+#    firefox
+#    chromium
+#    # google-chrome
+#    libreoffice
+#    alacritty
+#    dmenu
+#    # haskellPackages.dbus
+#    # haskellPackages.xmonad-contrib
+#    # haskellPackages.xmonad-extras
+#    # haskellPackages.xmonad
     haskellPackages.xmobar
-
-    #document tools
-    texlive.combined.scheme-full
-
-    #dev tools
-    automake
-    autoconf
-
-    git
-    rstudio
-    python3
-    R-with-my-packages
-    rstudio
-    haskellPackages.ghc
-
-    #multimedia
-    vlc
-    flameshot
-    shutter
-
-    capture # no sound
-    simplescreenrecorder # with sound
-    
-    #etc
-    #d2coding
-
-    #unfree
-    zoom-us
+#
+#    #document tools
+#    texlive.combined.scheme-full
+#
+#    #dev tools
+#    automake
+#    autoconf
+#
+#    git
+#    rstudio
+#    python3
+#    R-with-my-packages
+#    rstudio
+#    haskellPackages.ghc
+#
+#    #multimedia
+#    vlc
+#    flameshot
+#    shutter
+#
+#    capture # no sound
+#    simplescreenrecorder # with sound
+#    
+#    #etc
+#    #d2coding
+#
+#    #unfree
+#    zoom-us
     ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -324,7 +341,7 @@ in
     xl2tpd.enable = true;
     xserver = { 
       enable = true; # Enable the X11 windowing system.
-      displayManager.defaultSession = "mate";
+      # displayManager.defaultSession = "mate";
       libinput.enable = true; # Enable touchpad support.
       layout = "us";
       xkbVariant = "dvorak";
@@ -332,13 +349,6 @@ in
         mate.enable = true;
         # default = "mate"; # deprecated
       };
-
-      # Choose mate, not mate+xmonad! or gvfsd-trash and caja hell begins
-      # .xprofile :
-      # xmonad --replace &
-      # export XPROFILECHECK=1
-      # exec mate-session
-
       windowManager.xmonad = {
         enable = true;
         enableContribAndExtras = true;
@@ -349,13 +359,7 @@ in
           haskellPackages.xmonad
         ];
       };
-
-      displayManager.sessionCommands = ''
-        export CUSTOMXMONAD=${xmonadBin}
-        ${xmonadBin} --replace &
-      '';
     };  
-
   #displayManager.lightdm.autoLogin = {
   #enable = true;
   #user = "sepiabrown";
@@ -400,15 +404,14 @@ in
 #        };
 #      };
 
-      emacs = (super.emacs.overrideAttrs(old: {
-        buildInputs = old.buildInputs
-          ++ [self.glib-networking];
-      })).override {
-        withXwidgets = true;
-        withGTK3 = true;
-        webkitgtk = super.webkitgtk;
-      };
-
+#      emacs = (super.emacs.overrideAttrs(old: {
+#        buildInputs = old.buildInputs
+#          ++ [self.glib-networking];
+#      })).override {
+#        withXwidgets = true;
+#        withGTK3 = true;
+#        webkitgtk = super.webkitgtk;
+#      };
     })
   ];
 

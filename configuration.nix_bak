@@ -7,23 +7,21 @@
 let
 ######################
 ######################
-# important to not paste result of 'git diff' from terminal
-# because in terminal, tabs may get transformed into spaces
   custom_xkeyboard_config = builtins.toFile "suwon-keyboard-patch" ''
-diff --git a/symbols/pc b/symbols/pc
-index 0199713..6d396aa 100644
---- a/symbols/pc
-+++ b/symbols/pc
+--- xkeyboard-config-2.17/symbols/pc	1970-01-01 09:00:01.000000000 +0900
++++ b/pc	2020-03-03 21:26:21.567557000 +0900
 @@ -1,7 +1,7 @@
- default  partial alphanumeric_keys modifier_keys
- xkb_symbols "pc105" {
+-default  partial alphanumeric_keys modifier_keys
+-xkb_symbols "pc105" {
++default partial alphanumeric_keys modifier_keys
++xkb_symbols "pc105" {
  
 -    key <ESC>  {	[ Escape		]	};
 +    key <ESC>  {	[ 		]	};
  
      // The extra key on many European keyboards:
      key <LSGT> {	[ less, greater, bar, brokenbar ] };
-@@ -19,16 +19,16 @@ xkb_symbols "pc105" {
+@@ -19,16 +19,16 @@
      key  <TAB> {	[ Tab,	ISO_Left_Tab	]	};
      key <RTRN> {	[ Return		]	};
  
@@ -44,7 +42,7 @@ index 0199713..6d396aa 100644
      key <MENU> {	[ Menu			]	};
  
      // Beginning of modifier mappings.
-@@ -36,7 +36,8 @@ xkb_symbols "pc105" {
+@@ -36,7 +36,8 @@
      modifier_map Lock   { Caps_Lock };
      modifier_map Control{ Control_L, Control_R };
      modifier_map Mod2   { Num_Lock };
@@ -54,7 +52,7 @@ index 0199713..6d396aa 100644
  
      // Fake keys for virtual<->real modifiers mapping:
      key <LVL3> {	[ ISO_Level3_Shift	]	};
-  '';  
+  '';
   xmonad_config = ''
 import XMonad
 import XMonad.Config.Desktop
@@ -76,17 +74,28 @@ myPP = xmobarPP { ppCurrent = xmobarColor "#429942" "" . wrap "<" ">"}
 
 -- Key binding to toggle the gap for the bar.
 toggleStrutsKey XConfig {XMonad.modMask = mod3Mask} = (mod3Mask, xK_b)
+-- The default number of workspaces (virtual screens) and their names.
+-- By default we use numeric strings, but any string may be used as a
+-- workspace name. The number of workspaces is determined by the length
+-- of this list.
+--
+-- A tagging example:
+--
+-- > workspaces = ["web", "irc", "code" ] ++ map show [4..9]
+--
+--myWorkspaces    = ["web","dev","3","4","5","6","7","8","9"]
+myWorkspaces    = ["web","2","3","4","5","6","7","8","9"]
 
 -- Main configuration, override the defaults to your liking.
 myConfig = mateConfig 
         { borderWidth        = 2
-        , terminal           = "mate-terminal" --"alacritty"
+        --, terminal           = "alacritty"
         , normalBorderColor  = "#cccccc"
         , focusedBorderColor = "#cd8b00" 
         , modMask = mod3Mask 
         , focusFollowsMouse = False
-        --, workspaces = ["web","2","3","4","5","6","7","8","9","10","11"]
-        , logHook = updatePointer (0.5, 0.5) (0, 0) <+> logHook desktopConfig 
+        , workspaces = myWorkspaces
+        --, logHook = updatePointer (0.5, 0.5) (0, 0) <+> logHook desktopConfig 
                 --do 
                	--updatePointer (0.5, 0.5) (0, 0)
                	--logHook mateConfig -- : error happens with mate workspace!
@@ -100,21 +109,8 @@ myConfig = mateConfig
 
                 ]
   ''; # incomplete xmobar option breaks mate workspace switcher. so set all or erase all
-
-  inherit (pkgs.lib) mkOption mkIf optionals literalExample;
-  cfg = config.services.xserver.windowManager.xmonad;
-  xmonadBin = pkgs.writers.writeHaskell "xmonad2" {
-    ghc = cfg.haskellPackages.ghc;
-    libraries = [ cfg.haskellPackages.xmonad ] ++
-                cfg.extraPackages cfg.haskellPackages ++
-                optionals cfg.enableContribAndExtras
-                (with cfg.haskellPackages; [ xmonad-contrib xmonad-extras ]);
-  } xmonad_config;
 ######################
 ######################
-
-# sudo nixos-rebuild boot -p '20031619_gvfs__test' -I nixpkgs=https://releases.nixos.org/nixos/unstable/nixos-20.09pre215947.82b54d49066/nixexprs.tar.xz 
-# sudo nixos-rebuild switch -p '20031619_gvfs__test' -I nixpkgs=/home/sepiabrown/nixos-20.09pre215947.82b54d49066
 
   channelRelease = "nixos-20.09pre215947.82b54d49066";  # 2020-03-06 01:53:48
   sha256 = "1ygvhl72mjwfgkag612q9b6nvh0k5dhdqsr1l84jmsjk001fqfa7";
@@ -122,12 +118,16 @@ myConfig = mateConfig
   channelName = "unstable";
   url = "https://releases.nixos.org/nixos/${channelName}/${channelRelease}/nixexprs.tar.xz";
 
-  # pinnedNixpkgs = "/home/sepiabrown/nixos-20.09pre215947.82b54d49066";
   pinnedNixpkgs = builtins.fetchTarball {
     inherit url sha256;
   };
 in
 {
+  # system.extraSystemBuilderCmds =
+  #  ''mkdir -p $HOME/configfiles
+  #    ln -s '${let value = builtins.getEnv "NIXOS_CONFIG"; in if value == "" then  <nixos-config> else value}' \
+  #    "/nix/var/configfiles$out/configuration.nix"
+  #  '';  
   system.copySystemConfiguration = true;  
 
   nix.nixPath = [
@@ -144,10 +144,9 @@ in
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      #./mate-temporary.nix
-      #./xmonad-temporary.nix
-      #./display-managers-temporary.nix
-      #./lightdm-temporary.nix
+      ./mate-temporary.nix
+      ./xmonad-temporary.nix
+      ./display-managers-temporary.nix
     ];
 
   # fileSystems."/home" =
@@ -195,7 +194,6 @@ in
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
- 
   environment.systemPackages = with pkgs; 
     let
       R-with-my-packages = rWrapper.override { packages = with rPackages; [ 
@@ -203,16 +201,8 @@ in
         dplyr
         xts
       ];};
-    in
-    [
+    in [
     #system
-    vimHugeX
-    firefox
-    lvm2
-    networkmanager
-    htop
-    chromium
-    git
     gnome3.dconf-editor
 
     ripgrep
@@ -230,6 +220,7 @@ in
     partition-manager
     lvm2
     home-manager
+    #xmonad_log_applet_mate
 
     #must-need
     vimHugeX
@@ -324,7 +315,8 @@ in
     xl2tpd.enable = true;
     xserver = { 
       enable = true; # Enable the X11 windowing system.
-      displayManager.defaultSession = "mate";
+      displayManager.defaultSession = "mate+xmonad";
+      # desktopManager.xterm.enable = false;
       libinput.enable = true; # Enable touchpad support.
       layout = "us";
       xkbVariant = "dvorak";
@@ -332,13 +324,6 @@ in
         mate.enable = true;
         # default = "mate"; # deprecated
       };
-
-      # Choose mate, not mate+xmonad! or gvfsd-trash and caja hell begins
-      # .xprofile :
-      # xmonad --replace &
-      # export XPROFILECHECK=1
-      # exec mate-session
-
       windowManager.xmonad = {
         enable = true;
         enableContribAndExtras = true;
@@ -349,13 +334,7 @@ in
           haskellPackages.xmonad
         ];
       };
-
-      displayManager.sessionCommands = ''
-        export CUSTOMXMONAD=${xmonadBin}
-        ${xmonadBin} --replace &
-      '';
     };  
-
   #displayManager.lightdm.autoLogin = {
   #enable = true;
   #user = "sepiabrown";
@@ -371,7 +350,6 @@ in
         patches = [
           (custom_xkeyboard_config)
         ];
-        #patchFlags = [ "-p2" ];
       }); 
 
       new_xkbcomp = super.xorg.xkbcomp.overrideAttrs (old: {
@@ -393,7 +371,6 @@ in
           "--with-xkb-bin-base=${self.new_xkbcomp}/bin"
         ]; 
       }); # window manager keyboard
-
 #      xkbvalidate = super.xkbvalidate.override {
 #        libxkbcommon = super.libxkbcommon.override {
 #          xkeyboard_config = self.xorg.new_xkeyboardconfig;
@@ -408,7 +385,6 @@ in
         withGTK3 = true;
         webkitgtk = super.webkitgtk;
       };
-
     })
   ];
 
