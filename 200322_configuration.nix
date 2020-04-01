@@ -10,19 +10,20 @@ let
 # important to not paste result of 'git diff' from terminal
 # because in terminal, tabs may get transformed into spaces
   custom_xkeyboard_config = builtins.toFile "suwon-keyboard-patch" ''
+diff --git a/symbols/pc b/symbols/pc
+index 0199713..6d396aa 100644
 --- a/symbols/pc
 +++ b/symbols/pc
-@@ -1,7 +1,8 @@
+@@ -1,7 +1,7 @@
  default  partial alphanumeric_keys modifier_keys
  xkb_symbols "pc105" {
  
 -    key <ESC>  {	[ Escape		]	};
 +    key <ESC>  {	[ 		]	};
-+    key <AE07>  {	[ L, l	]	};
  
      // The extra key on many European keyboards:
      key <LSGT> {	[ less, greater, bar, brokenbar ] };
-@@ -19,16 +20,16 @@ xkb_symbols "pc105" {
+@@ -19,16 +19,16 @@ xkb_symbols "pc105" {
      key  <TAB> {	[ Tab,	ISO_Left_Tab	]	};
      key <RTRN> {	[ Return		]	};
  
@@ -43,7 +44,7 @@ let
      key <MENU> {	[ Menu			]	};
  
      // Beginning of modifier mappings.
-@@ -36,7 +37,8 @@ xkb_symbols "pc105" {
+@@ -36,7 +36,8 @@ xkb_symbols "pc105" {
      modifier_map Lock   { Caps_Lock };
      modifier_map Control{ Control_L, Control_R };
      modifier_map Mod2   { Num_Lock };
@@ -53,18 +54,6 @@ let
  
      // Fake keys for virtual<->real modifiers mapping:
      key <LVL3> {	[ ISO_Level3_Shift	]	};
-
---- a/symbols/us
-+++ b/symbols/us
-@@ -258,6 +258,8 @@
-     key <AB10> { [	    z,	Z		]	};
- 
-     key <BKSL> { [  backslash,  bar             ]       };
-+    include "kr(ralt_hangul)"
-+    include "kr(rctrl_hanja)"
- };
- 
- // Dvorak intl., with dead keys
   '';  
   xmonad_config = ''
 import XMonad
@@ -104,8 +93,7 @@ myConfig = mateConfig
         `additionalKeysP`
                 [ (("M-p"), spawn "dmenu_run -fn 'Droid Sans Mono-13'") 
                	, (("M-f"), spawn "firefox")
-                , (("M-s"), spawn "alacritty -e /home/sepiabrown/my.rclone")
-                , (("M-d"), spawn "caja")
+               	, (("M-s"), spawn "alacritty -e my.rclone")
                 , (("M-z"), kill)
 
                 ]
@@ -116,8 +104,8 @@ myConfig = mateConfig
   xmonadBin = pkgs.writers.writeHaskell "xmonad" {
     ghc = cfg.haskellPackages.ghc;
     libraries = [ cfg.haskellPackages.xmonad ] ++
-    cfg.extraPackages cfg.haskellPackages ++
-    (with cfg.haskellPackages; [ xmonad-contrib xmonad-extras ]);
+                cfg.extraPackages cfg.haskellPackages ++
+                (with cfg.haskellPackages; [ xmonad-contrib xmonad-extras ]);
   } xmonad_config;
 ######################
 ######################
@@ -131,7 +119,7 @@ myConfig = mateConfig
   channelName = "unstable";
   url = "https://releases.nixos.org/nixos/${channelName}/${channelRelease}/nixexprs.tar.xz";
 
-  #pinnedNixpkgs = "/home/sepiabrown/nixos-20.09pre215947.82b54d49066";
+  # pinnedNixpkgs = "/home/sepiabrown/nixos-20.09pre215947.82b54d49066";
   pinnedNixpkgs = builtins.fetchTarball {
     inherit url sha256;
   };
@@ -166,7 +154,6 @@ in
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.supportedFilesystems = [ "ntfs" ];
 
   networking.hostName = "suwon-nix"; # Define your hostname.
   #networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -205,37 +192,21 @@ in
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
-
-  i18n.inputMethod.enabled = "uim";
  
   environment.systemPackages = with pkgs; 
     let
-    customR = rWrapper.override { packages = with rPackages; [ 
-      foreign
-      ggplot2
-      dplyr
-      xts
-    ];};
-    customRStudio = rstudioWrapper.override{ packages = with rPackages; [ 
-      pacman foreign tidyverse
-      ggplot2 dplyr xts
-    ];};
+      R-with-my-packages = rWrapper.override { packages = with rPackages; [ 
+        ggplot2
+        dplyr
+        xts
+      ];};
     in
     [
     pkg-config intltool gtk-doc libtool autoconf automake 
     which gtk2 gtk3 libhangul librime libxkbcommon m17n_db m17n_lib anthy gettext qt4 qt5.qtbase librsvg libappindicator libxklavier
     gnumake
-    automake
-    autoconf
-    
-    #test
-    #nimf
     #system
-    samba
-    samba4Full
-    hplip
     ripgrep
-    zip
     unzip
     nvramtool
     refind
@@ -250,12 +221,6 @@ in
     partition-manager
     lvm2
     home-manager
-    rclone
-    git
-    baobab # Disk Usage Analyser
-    dua # Disk Usage
-    duc # Disk Usage
-    testdisk
 
     #must-need
     qt5.qtbase
@@ -281,19 +246,17 @@ in
 
     #document tools
     texlive.combined.scheme-full
-    poppler_utils
-
 
     #dev tools
-    python3
-    haskellPackages.ghc
+    automake
+    autoconf
 
-    #stat tools
+    git
     rstudio
-    pandoc
-    customR
-    customRStudio
-    #virtualbox # for SAS
+    python3
+    R-with-my-packages
+    rstudio
+    haskellPackages.ghc
 
     #multimedia
     vlc
@@ -303,20 +266,13 @@ in
     capture # no sound
     simplescreenrecorder # with sound
     
+    #etc
+    #d2coding
+
     #unfree
     zoom-us
     ];
 
-    virtualisation.virtualbox = {
-      #guest = {
-      #  enable =true;
-      #};
-      host = {
-        enable = true;
-        #enableExtensionPack = true;
-      };
-    };
-    users.extraGroups.vboxusers.members = [ "sepiabrown" "root" ];
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
@@ -360,10 +316,6 @@ in
   
   # List services that you want to enable:
   services = {
-    printing = {
-      enable = true;
-      drivers = [ pkgs.hplipWithPlugin ];
-    };
     openssh.enable = true; # Enable the OpenSSH daemon.
     blueman.enable = true;
     xl2tpd.enable = true;
@@ -408,12 +360,7 @@ in
 
   console.useXkbConfig = true;
 
-  nixpkgs.config = {
-    allowUnfree = true;
-    permittedInsecurePackages = [
-         "xpdf-4.02"
-    ];
-  };
+  nixpkgs.config.allowUnfree = true;
 
   nixpkgs.overlays = [
     (self: super: {
@@ -463,22 +410,21 @@ in
   ];
 
   fonts = {
-    enableDefaultFonts = true;
     enableFontDir = true;
     enableGhostscriptFonts = true;
     fonts = with pkgs; [ 
-      anonymousPro # unfree, TrueType font set intended for source code 
-      corefonts # unfree, Microsoft's TrueType core fonts for the Web has an unfree license (‘unfreeRedistributable’), refusing to evaluate.
-      dejavu_fonts # unfree, A typeface family based on the Bitstream Vera fonts
+      # anonymousPro # TrueType font set intended for source code 
+      # corefonts # Microsoft's TrueType core fonts for the Web has an unfree license (‘unfreeRedistributable’), refusing to evaluate.
+      dejavu_fonts # A typeface family based on the Bitstream Vera fonts
       noto-fonts # Beautiful and free fonts for many languages
       freefont_ttf # GNU Free UCS Outline Fonts
       google-fonts
       inconsolata # A monospace font for both screen and print
       liberation_ttf # Liberation Fonts, replacements for Times New Roman, Arial, and Courier New
-      powerline-fonts  # unfree? Oh My ZSH, agnoster fonts  
+      # powerline-fonts  # Oh My ZSH, agnoster fonts  
       source-code-pro
-      terminus_font  # unfree, A clean fixed width font
-      ttf_bitstream_vera # unfree
+      terminus_font  # A clean fixed width font
+      # ttf_bitstream_vera
       ubuntu_font_family
       d2coding
     ];

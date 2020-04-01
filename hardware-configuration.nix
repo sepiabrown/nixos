@@ -23,11 +23,16 @@
       fsType = "vfat";
     };
 
-  fileSystems."/home" =
-    { device = "/dev/disk/by-uuid/5fd1f2e1-a4ea-44af-a09d-c5163eb042c7";
-    #{ device = "/dev/disk/by-label/vivohome";
-      fsType = "ext4";
-    };  
+  #fileSystems."/home" =
+  #  { device = "/dev/disk/by-label/vivohome";
+  #    fsType = "ext4";
+  #  };  
+  # disable fastboot in windows!
+  #fileSystems."/commonground" =
+  #  { device = "/dev/disk/by-uuid/158D250F618E0C06";
+  #    fsType = "ntfs";
+  #    options = [ "rw" "uid=1000"];
+  #  };  
 
   swapDevices = [ ];
 
