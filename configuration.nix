@@ -9,6 +9,16 @@ let
 ######################
 # important to not paste result of 'git diff' from terminal
 # because in terminal, tabs may get transformed into spaces
+#
+# To set the keyboard
+# 1. In Mate, go to System -> Preferences -> Hardware -> Keyboard
+# 2. In Layouts tab, click Keyboard model
+# 3. Choose the following. Vendors : Generic, Models : Generic 105-key PC
+#
+# The "suwon-keyboard-patch" file patches Caps Lock key to be Super_R.
+# In xmonad, Super_R works as "M". For example "M-p" means "Super_R"(which is Caps Lock in my setting) + "p" key.
+#
+# sudo find . -name "*xkeyboard*"
   custom_xkeyboard_config = builtins.toFile "suwon-keyboard-patch" ''
 --- a/symbols/pc
 +++ b/symbols/pc
