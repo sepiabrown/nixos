@@ -16,13 +16,24 @@ let
 # To set the keyboard :
 # 1. In Mate, go to System -> Preferences -> Hardware -> Keyboard
 # 2. In Layouts tab, click Keyboard model
-# 3. Choose the following. Vendors : Generic, Models : Generic 105-key PC
+# 3. Choose the following. Vendors : Generic, Models : Generic 105-key PC (because the patch file patches "pc105")
 #
-# Modifier Keys :
+# To find keys :
+# xev(nixpkgs : xorg.xev)
+#
+# Modifier keys :
 # mod1Mask = Left Alt
 # mod3Mask = Right Alt
 # mod4Mask = Windows
 #
+# Apple Aluminium
+# fn -> nothing
+# Left Control -> Control_L
+# Left/Right option -> Alt_L/Alt_R
+# Left/Right cmomand -> Super_L/Super_R
+# Left/Right upper arrow -> Shift_L/Shift_R
+# 한/영 -> Caps Lock
+# 
 # File path :
 # sudo find . -name "*xkeyboard*"
 # /nix/store/~~longname~~-xkeyboard-config-2.31/share/X11/xkb/symbols/pc
