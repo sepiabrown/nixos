@@ -1,6 +1,39 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
+#
+# Installing NIXOS essential (https://nixos.org/manual/nixos/stable/#sec-installation) :
+#
+# Partitioning :
+#
+# sudo parted /dev/sda -- mklabel gpt # usually not ms-dos for modern computers
+# sudo parted /dev/sda -- mkpart primary 512MiB -8GiB # main storage for most of the data, system, etc
+# sudo parted /dev/sda -- mkpart primary linux-swap -8GiB 100% # Optional, swap is at the end!
+# sudo parted /dev/sda -- mkpart ESP fat32 1MiB 512MiB # May not be needed for dual booting, booting partition in EFI System Partition
+# sudo parted /dev/sda -- set 3 esp on # May not be needed for dual booting
+#
+# Formatting :
+# sudo mkfs.ext4 -L nixos /dev/sda1
+# sudo mkswap -L swap /dev/sda2 # Optional
+# sudo mkfs.fat -F 32 -n boot /dev/sda3 # May not be needed for dual booting, fat32 for booting partition
+# (For creating LVM volumes, the LVM commands, e.g., pvcreate, vgcreate, and lvcreate.)
+#
+# Mount and set for NixOS install :
+# sudo mount /dev/disk/by-label/nixos /mnt
+# sudo mkdir -p /mnt/boot
+# sudo mount /dev/disk/by-label/boot /mnt/boot
+# or
+# sudo mount /dev/disk/by-label/EFI /mnt/boot # Dual booting on iMac
+# sudo swapon /dev/sda2 # Optional
+# or
+# sudo dd if=/dev/zero of=/mnt/.swapfile bs=1024 count=2097152 # bs=1024: block size - 1KB; count=2097152: 1024x1024x2 – MB->GB->2GB
+# sudo chmod 600 /mnt/.swapfile
+# sudo swapon /mnt/.swapfile
+#
+# sudo nixos-generate-config --root /mnt
+#
+# Install:
+# sudo nixos-install
 
 { config, pkgs, ... }:
 
@@ -532,6 +565,7 @@ in
   users = {
     users.sepiabrown = {
       isNormalUser = true;
+      initialPassword = "P@ssw@rd01"; # Idea from Will T
       home = "/home/sepiabrown";
       hashedPassword = "$6$U4rwuO8Gycc$lOleYt0NLgOoUj2FrROHM1qu01joT1RhM2FLgnhqZGtNd0ALnbBY5DIzMH0EY1WFs2SEK4o8Z1H35M8nKpguP0";
       extraGroups = [ 
