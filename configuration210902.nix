@@ -182,20 +182,6 @@ myConfig = mateConfig
   } xmonad_config;
 ######################
 ######################
-
-# sudo nixos-rebuild boot -I nixpkgs=https://releases.nixos.org/nixos/unstable/nixos-20.09pre215947.82b54d49066/nixexprs.tar.xz -p
-# sudo nixos-rebuild switch -I nixpkgs=/home/sepiabrown/nixos-20.09pre215947.82b54d49066 -p
-
-  channelRelease = "nixos-20.09pre215947.82b54d49066";  # 2020-03-06 01:53:48
-  sha256 = "1ygvhl72mjwfgkag612q9b6nvh0k5dhdqsr1l84jmsjk001fqfa7";
-
-  channelName = "unstable";
-  url = "https://releases.nixos.org/nixos/${channelName}/${channelRelease}/nixexprs.tar.xz";
-
-  #pinnedNixpkgs = "/home/sepiabrown/nixos-20.09pre215947.82b54d49066";
-  pinnedNixpkgs = builtins.fetchTarball {
-    inherit url sha256;
-  };
 in
 {
   system.copySystemConfiguration = true;  
