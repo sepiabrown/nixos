@@ -186,17 +186,6 @@ in
 {
   system.copySystemConfiguration = true;  
 
-  nix.nixPath = [
-    "nixpkgs=${pinnedNixpkgs}"
-    "nixos-config=/etc/nixos/configuration.nix"
-    "/nix/var/nix/profiles/per-user/root/channels"
-  ];
-
-  programs.command-not-found = {
-    enable = true;
-    dbPath = "${pinnedNixpkgs}/programs.sqlite";
-  };
-
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
