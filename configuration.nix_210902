@@ -204,26 +204,36 @@ in
   boot.loader.efi.canTouchEfiVariables = true;
   boot.supportedFilesystems = [ "ntfs" ];
 
-  networking.hostName = "suwon-nix"; # Define your hostname.
-  #networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-  networking.networkmanager = {
-    enable = true;   # wpa_spplicant and networkmanager collide
-    packages = [
-#????????????????????????????????????
-      pkgs.networkmanager-l2tp
-    ];
-  };
+  networking = {
+    hostName = "suwon-nix"; # Define your hostname.
+    networkmanager = {
+      enable = true;   # wpa_spplicant and networkmanager collide
+      packages = [
+        #????????????????????????????????????
+        pkgs.networkmanager-l2tp
+      ];
+    };
+    # wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
-  networking.extraHosts = ''
+    # The global useDHCP flag is deprecated, therefore explicitly set to false here.
+    # Per-interface useDHCP will be mandatory in the future, so this generated config
+    # replicates the default behaviour.
+    useDHCP = false;
+    # Depending on the device!
+    defaultGateway = "192.168.0.1";
+    nameservers = [ "147.46.80.1" ];
+    interfaces = {
+      enp4s0f0.ipv4.addresses = [ { 
+        address = "192.168.0.98";
+        prefixLength = 24;
+      } ]; # useDHCP = true;
+      wlp3s0.useDHCP = true;
+    };
+    extraHosts = ''
     209.51.188.89 elpa.gnu.org
-  '';
-#????????????????????????????????????
+    '';
 
-  # The global useDHCP flag is deprecated, therefore explicitly set to false here.
-  # Per-interface useDHCP will be mandatory in the future, so this generated config
-  # replicates the default behaviour.
-  networking.useDHCP = false;
-  networking.interfaces.wlp1s0.useDHCP = true;
+  };
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -406,13 +416,13 @@ in
     xserver = { 
       enable = true; # Enable the X11 windowing system.
       displayManager.defaultSession = "mate";
+      desktopManager.mate.enable = true;
+      # displayManager.sddm.enable = true;
+      # desktopManager.plasma5.enable = true;
       libinput.enable = true; # Enable touchpad support.
       layout = "us";
       xkbVariant = "dvorak";
-      desktopManager = {
-        mate.enable = true;
-        # default = "mate"; # deprecated
-      };
+      xkbModel = "pc105";
 
       # Choose mate, not mate+xmonad! or gvfsd-trash and caja hell begins
       # .xprofile :
@@ -531,7 +541,17 @@ in
     #};
   };
 
-  programs.vim.defaultEditor = true;
+  programs = {
+    vim = {
+      package = pkgs.vimHugeX;
+      defaultEditor = true;
+    };
+    #git = {
+    #  enable = true;
+    #  userName = "sepiabrown";
+    #  userEmail = "sepiabrown@naver.com";
+    #};
+  }; 
   # programs.zsh
   # virtualisation.docker
 
@@ -559,5 +579,5 @@ in
   # compatible, in order to avoid breaking some software such as database
   # servers. You should change this only after NixOS release notes say you
   # should.
-  system.stateVersion = "19.09"; # Did you read the comment?
+  system.stateVersion = "21.05"; # Did you read the comment?
 }
